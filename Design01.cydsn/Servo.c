@@ -35,12 +35,12 @@ void init_ID(Servo_Data* servo){
 
 void init_stretch(Servo_Data* servo){
     uint8 i;
-    unsigned char write_speed[3];
-    write_speed[0] = SPD_CMD | servo->id;
-    write_speed[1] = 0x01;
-    write_speed[2] = (unsigned char) servo->stretch;
+    unsigned char write_stretch[3];
+    write_stretch[0] = SPD_CMD | servo->id;
+    write_stretch[1] = 0x01;
+    write_stretch[2] = (unsigned char) servo->stretch;
     for(i = 0; i < 3; i++){
-        UART_servo_PutChar(write_speed[i]);
+        UART_servo_PutChar(write_stretch[i]);
     }
     while(UART_servo_GetRxBufferSize() < 6);
     UART_servo_ClearRxBuffer();
@@ -92,12 +92,10 @@ void servo_set(Servo_Data* servo, int16 angle, uint8 pf){
         UART_servo_ClearRxBuffer();
         pos = (((uint16)rx[4] & 0x7f) << 7) | ((uint16)rx[5] & 0x7f);
         ang = ((int16)pos - 7500) / 29.6296296296296296f;
-        if(ang < -135 || ang > 135){
-            sprintf(buf, "Position Error\n");
-        }else {
+        if((ang >= -135) && (ang <= 135)){
             sprintf(buf, "%d\n", ang);
+            UART_PC_PutString(buf);
         }
-        UART_Debug_PutString(buf);
     }
 }
 

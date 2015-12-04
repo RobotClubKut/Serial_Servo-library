@@ -17,6 +17,7 @@
 #define POS_CMD 0x80
 #define SPD_CMD 0xC0
 #define ID_CMD  0xE0
+#define RX_CMD  0xA0
 
 typedef struct{
     uint8 id;

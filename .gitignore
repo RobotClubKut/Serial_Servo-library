@@ -14,6 +14,8 @@ Export/
 *.uvopt
 *.uvproj
 *.cyfit
+*.PS2_Controller.*
+*.main.c.*
 
 
 # Windows image file caches

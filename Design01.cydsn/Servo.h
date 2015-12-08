@@ -25,7 +25,7 @@ typedef struct{
     uint8 state;
     int angle;
 } Servo_Data;
-void Servo_Dataset(Servo_Data*, uint8 id, uint8 speed, uint8 stretch);
+void Servo_Dataset(Servo_Data*, uint8 id, uint8 speed, uint8 stretch, int angle);
 void EEPROM_rx(Servo_Data*);
 void read_ID(void);
 cystatus init_ID(uint8 id);

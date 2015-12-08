@@ -19,10 +19,11 @@
 
 void mes(char buf[32]);
 
-void Servo_Dataset(Servo_Data* servo, uint8 id, uint8 speed, uint8 stretch){
+void Servo_Dataset(Servo_Data* servo, uint8 id, uint8 speed, uint8 stretch, int angle){
     servo->id = id;
     servo->speed = speed;
     servo->stretch = stretch;
+    servo->angle = angle;
     servo->state = STATE_SEND;
 }
 
@@ -80,22 +81,17 @@ void read_ID(void){
 
 cystatus init_ID(uint8 id){
     uint16 count = 0;
-    uint8 i, rx_id;
     unsigned char tx[4];
-    unsigned char rx[5];
-    char buf[32];
     tx[0] = 0xE0 | id;
     tx[1] = 0x01;
     tx[2] = 0x01;
     tx[3] = 0x01;
-    for(i = 0; i < 4; i++){
-        UART_servo_PutChar(tx[i]);
-    }
+    UART_servo_PutArray(tx, 4);
     while(UART_servo_GetRxBufferSize() < 5){
         count += 1;
         if(count > 500){
             count = 0;
-            return CYRET_TIMEOUT;
+            return CYRET_EMPTY;
         }
         CyDelayUs(1);
     }
@@ -106,19 +102,16 @@ cystatus init_ID(uint8 id){
 
 cystatus init_stretch(Servo_Data* servo){
     uint16 count = 0;
-    uint8 i;
     unsigned char tx[3];
     tx[0] = 0xC0 | servo->id;
     tx[1] = 0x01;
     tx[2] = (unsigned char) servo->stretch;
-    for(i = 0; i < 3; i++){
-        UART_servo_PutChar(tx[i]);
-    }
+    UART_servo_PutArray(tx, 3);
     while(UART_servo_GetRxBufferSize() < 6){
         count += 1;
         if(count > 500){
             count = 0;
-            return CYRET_TIMEOUT;
+            return CYRET_EMPTY;
         }
         CyDelayUs(1);
     }
@@ -128,19 +121,16 @@ cystatus init_stretch(Servo_Data* servo){
 
 cystatus init_speed(Servo_Data* servo){
     uint16 count = 0;
-    uint8 i;
     unsigned char tx[3];
     tx[0] = 0xC0 | servo->id;
     tx[1] = 0x02;
     tx[2] = (unsigned char) servo->speed;
-    for(i = 0; i < 3; i++){
-        UART_servo_PutChar(tx[i]);
-    }
+    UART_servo_PutArray(tx, 3);
     while(UART_servo_GetRxBufferSize() < 6){
         count += 1;
         if(count > 500){
             count = 0;
-            return CYRET_TIMEOUT;
+            return CYRET_EMPTY;
         }
         CyDelayUs(1);
     }
@@ -154,14 +144,12 @@ cystatus data_wait(void);
 int16 pos_get(void);
 
 void angle_set(Servo_Data* servo, int16 angle){
-    uint8 i;
     uint16 position;
     cystatus sts;
+    servo->angle = angle;
     position = (angle * 29.6296296296296296f) + 7500;
     sts = servo_serial(servo, position);
-    if(sts == CYRET_SUCCESS){
-        servo->angle = pos_get();
-    } else if (sts == CYRET_TIMEOUT){
+    if (sts == CYRET_CANCELED){
         mes("erorr: angle_set\n");
     }
 }
@@ -170,21 +158,20 @@ void angle_get(Servo_Data *servo) {
     char buf[32];
     int16 pos;
     cystatus sts;
+    servo->angle = 0;
     sts = servo_serial(servo, 0);
     if(sts == CYRET_SUCCESS) {
-        servo->angle = 0;
         pos = pos_get();
         if((pos >= -135) && (pos <= 135)) {
             sprintf(buf, "%d\n", pos);
             UART_PC_PutString(buf);
         }
-    } else if (sts == CYRET_TIMEOUT) {
+    } else if (sts == CYRET_CANCELED) {
         mes("error: angle_get\n");
     }
 }
 
 cystatus servo_serial(Servo_Data *servo, uint16 pos) {
-    cystatus wait;
     switch (servo->state) {
         case STATE_SEND: {
             data_send(servo->id, pos);
@@ -192,11 +179,8 @@ cystatus servo_serial(Servo_Data *servo, uint16 pos) {
             break;
         }
         case STATE_WAIT: {
-            wait = data_wait();
-            if(wait == CYRET_EMPTY)
-                return CYRET_EMPTY;
-            if(wait == CYRET_TIMEOUT)
-                return CYRET_TIMEOUT;
+            if(data_wait() == CYRET_CANCELED)
+                return CYRET_CANCELED;
             servo->state = STATE_SEND;
         }
     }
@@ -204,7 +188,6 @@ cystatus servo_serial(Servo_Data *servo, uint16 pos) {
 }
 
 void data_send(uint8 id, uint16 pos) {
-    uint8 i;
     unsigned char tx[3];
     tx[0] = 0x80 | id;
     tx[1] = (unsigned char)(pos >> 7) & 0x7F;
@@ -213,12 +196,12 @@ void data_send(uint8 id, uint16 pos) {
 }
 
 cystatus data_wait(void) {
-    uint16 count;
+    uint16 count = 0;
     if (UART_servo_GetRxBufferSize() < 6){
         count += 1;
-        if(count > 500){
+        if(count > 1000){
             count = 0;
-            return CYRET_TIMEOUT;
+            return CYRET_CANCELED;
         }
         CyDelayUs(1);
         return CYRET_EMPTY;
@@ -234,7 +217,6 @@ int16 pos_get(void) {
     for(i = 0; i < 6; i++){
         rx[i] = (unsigned char) UART_servo_GetChar();
     }
-    UART_servo_ClearRxBuffer();
     pos = (((uint16)rx[4] & 0x7f) << 7) | ((uint16)rx[5] & 0x7f);
     angle = ((int16)pos - 7500) / 29.6296296296296296f;
     return angle;

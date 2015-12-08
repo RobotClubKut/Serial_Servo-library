@@ -19,6 +19,7 @@ Servo_Data servo[3];
 void free(void);
 void kamae(void);
 void keep(void);
+void karimen(void);
 
 int main()
 {
@@ -34,34 +35,31 @@ int main()
     CyDelay(1000);
     sprintf(buf, "Servo Start\n");
     UART_PC_PutString(buf);
-    Servo_Dataset(&servo[0], 0, 100, 10);
-    Servo_Dataset(&servo[1], 1, 100, 10);
-    Servo_Dataset(&servo[2], 2, 100, 10);
+    Servo_Dataset(&servo[0], 0, 100, 10, -5);
+    Servo_Dataset(&servo[1], 1, 100, 10, -115);
+    Servo_Dataset(&servo[2], 2, 100, 10, 130);
     CyDelay(1000);
     for(;;)
     {
+        //free();
         //PWM_WriteCompare(153);
+        //angle_set(&servo[0], -5);
         /*
+        CyDelay(100);
+        angle_set(&servo[1], -115);
+        CyDelay(100);
+        */
+        
         psData = PS2_Controller_get();
+        sprintf(buf, "%d\n", (int)psData.CIRCLE);
+        UART_PC_PutString(buf);
         if(psData.CIRCLE){
-            if(c_flag){
-                kamae();
-                }
-            c_flag = 0;
-        } else {
-            c_flag = 1;
+            kamae();
         }
         if(psData.START){
-            if(s_flag){
-                free();
-                }
-           s_flag = 0;
-        } else {
-            s_flag = 1;
+            karimen();
         }
         keep();
-        */
-        free();
     }
 }
 
@@ -76,15 +74,29 @@ void free(void) {
 
 void kamae(void) {
     angle_set(&servo[0], -5);
-    angle_set(&servo[1], -110);
+    CyDelay(1);
+    angle_set(&servo[1], -115);
+    CyDelay(1);
     angle_set(&servo[2], 130);
+    CyDelay(1);
     PWM_WriteCompare(133);
 }
 
 void keep(void) {
     angle_set(&servo[0], servo[0].angle);
+    CyDelay(1);
     angle_set(&servo[1], servo[1].angle);
+    CyDelay(1);
     angle_set(&servo[2], servo[2].angle);
-
+    CyDelay(1);
+}
+void karimen(void){
+    angle_set(&servo[2], 0);
+    CyDelay(1);
+    angle_set(&servo[0], -5);
+    CyDelay(1);
+    angle_set(&servo[1], 0);
+    CyDelay(1);
+    PWM_WriteCompare(150);
 }
 /* [] END OF FILE */

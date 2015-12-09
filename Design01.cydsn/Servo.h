@@ -32,7 +32,11 @@ cystatus init_ID(uint8 id);
 cystatus init_stretch(Servo_Data*);
 cystatus init_speed(Servo_Data*);
 void angle_set(Servo_Data*, int16 angle);
+void angle_get(uint8 id);
+void angle_keep(Servo_Data*);
+/*
+void angle_set(Servo_Data*, int16 angle);
 void angle_get(Servo_Data*);
-
+*/
 #endif /* CYAPICALLBACKS_H */   
 /* [] END OF FILE */

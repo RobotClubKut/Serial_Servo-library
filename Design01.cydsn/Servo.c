@@ -13,16 +13,11 @@
 #include <stdio.h>
 #include "Servo.h"
 
-#define STATE_SEND 0
-#define STATE_WAIT 1
-#define STATE_GET 2
-
 void Servo_Dataset(Servo_Data* servo, uint8 id, uint8 speed, uint8 stretch, int angle){
     servo->id = id;
     servo->speed = speed;
     servo->stretch = stretch;
     servo->angle = angle;
-    servo->state = STATE_SEND;
 }
 
 void EEPROM_rx(Servo_Data* servo){
@@ -118,21 +113,14 @@ cystatus init_stretch(Servo_Data* servo){
     return CYRET_SUCCESS;
 }
 
-cystatus init_speed(Servo_Data* servo){
+cystatus speed_set(Servo_Data* servo){
     uint16 count = 0;
     unsigned char tx[3];
     tx[0] = 0xC0 | servo->id;
     tx[1] = 0x02;
     tx[2] = (unsigned char) servo->speed;
     UART_servo_PutArray(tx, 3);
-    while(UART_servo_GetRxBufferSize() < 6){
-        count += 1;
-        if(count > 500){
-            count = 0;
-            return CYRET_EMPTY;
-        }
-        CyDelayUs(1);
-    }
+    CyDelay(1);
     UART_servo_ClearRxBuffer();
     return CYRET_SUCCESS;
 }
@@ -147,7 +135,7 @@ void angle_set(Servo_Data* servo, int16 angle){
     tx[1] = (unsigned char)(pos >> 7) & 0x7F;
     tx[2] = (unsigned char) pos & 0x7F;
     UART_servo_PutArray(tx, 3);
-    CyDelayUs(500);
+    CyDelay(1);
 }
 
 void angle_get(uint8 id) {
@@ -161,7 +149,7 @@ void angle_get(uint8 id) {
     tx[1] = 0x00;
     tx[2] = 0x00;
     UART_servo_PutArray(tx, 3);
-    CyDelayUs(500);
+    CyDelay(1);
     for(i = 0; i < 6; i++){
         rx[i] = (unsigned char) UART_servo_GetChar();
     }
@@ -182,7 +170,7 @@ void angle_keep(Servo_Data* servo){
     tx[1] = (unsigned char)(pos >> 7) & 0x7F;
     tx[2] = (unsigned char) pos & 0x7F;
     UART_servo_PutArray(tx, 3);
-    CyDelayUs(500);
+    CyDelay(1);
 }
 
 /* [] END OF FILE */

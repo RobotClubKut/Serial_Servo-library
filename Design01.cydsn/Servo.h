@@ -22,7 +22,6 @@ typedef struct{
     uint8 id;
     uint8 speed;
     uint8 stretch;
-    uint8 state;
     int angle;
 } Servo_Data;
 void Servo_Dataset(Servo_Data*, uint8 id, uint8 speed, uint8 stretch, int angle);
@@ -30,13 +29,10 @@ void EEPROM_rx(Servo_Data*);
 void read_ID(void);
 cystatus init_ID(uint8 id);
 cystatus init_stretch(Servo_Data*);
-cystatus init_speed(Servo_Data*);
+cystatus speed_set(Servo_Data*);
 void angle_set(Servo_Data*, int16 angle);
 void angle_get(uint8 id);
 void angle_keep(Servo_Data*);
-/*
-void angle_set(Servo_Data*, int16 angle);
-void angle_get(Servo_Data*);
-*/
+
 #endif /* CYAPICALLBACKS_H */   
 /* [] END OF FILE */
